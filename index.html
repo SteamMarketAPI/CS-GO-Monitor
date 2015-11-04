@@ -1,0 +1,138 @@
+<html>
+<head>
+    <!--Stylesheets-->
+    <link rel="stylesheet" type="text/css" href="./css/jquery.qtip.min.css" />
+    <link rel="stylesheet" type="text/css" href="./css/tftips.css">
+
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:800italic' rel='stylesheet' type='text/css'>
+    <style type="text/css">
+        html {
+            background-color:#444;
+            font-family: sans-serif;
+            font-size:16px;
+            color: #f4f4f4;
+        }
+        .wrapper {
+            max-width: 1150px;
+            margin:0 auto;
+        }
+        .tfPrice {
+            font-size:14px;
+            font-weight: normal;
+        }
+        .note {
+            font-size:12px;
+            font-weight:normal;
+            color:#ddd;
+            background-color: #111;
+        }
+        p {
+            background-color:#222;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight:bold;
+        }
+        a {
+            text-decoration: none;
+            color:orange;
+        }
+        a:hover {
+            color:rgb(253,81,0);
+        }
+        tt {
+            color:#AEE;
+            font-size:14px;
+            padding: 10px 0;
+            display:block;
+        }
+        h1 {
+            font-family: 'Open Sans', sans-serif;
+            font-weight: 800;
+            font-style: italic;
+            text-shadow: 1px 1px 3px #111;
+            font-size:  44px;
+            margin-bottom:16px;
+        }
+        ::selection {
+            background: #224;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <h1>Backpack TF Tooltips</h1>
+        <p style="font-weight:normal;">
+            This is a neat little script that pulls TF2 item data from <a href="http://backpack.tf">backpack.tf</a>'s and <a href="http://steampowered.com">SteamPowered</a>'s APIs via PHP cronjobs, and turns parses item names into tooltips.  The only thing you have to do is wrap any item name, or part of an item name in some span tags, like so: <br />
+            <tt>&lt;span class="tfPrice"&gt;Refined Metal&lt;/span&gt;</tt>
+            This was designed with forums that use BBCode in mind, but can easily be placed in any website that uses PHP &amp; MySQL.
+        </p>
+        <p>
+            Here are some example items:<br />
+            <br /><span class="tfPrice">Refined Metal</span>
+            <br /><span class="tfPrice">The Wrap Assassin</span>
+            <br /><span class="tfPrice">Tour of Duty Ticket</span>
+            <br /><span class="tfPrice">Voodoo-Cursed Bag of Quicklime</span>
+        </p>
+        <p>
+            Item quality parsing:
+            <br /><span class="tfPrice">Haunted Dead Little Buddy</span>
+            <br /><span class="tfPrice">Vintage Whiskered Gentleman</span>
+            <br /><span class="tfPrice">V. whiskered gentleman</span>
+            <br /><span class="tfPrice">Genuine Mask of the Shaman</span>
+            <br /><span class="tfPrice">Strange Scattergun</span>
+            <br /><span class="tfPrice">S. Scattergun</span>
+            <br /><span class="tfPrice">C. Stickybomb Launcher</span>
+            <br /><span class="tfPrice">Collector's Dead Ringer</span>
+            <br />
+            <br />auto complete item names:
+            <br /><span class="tfPrice">Battalion</span>
+            <br />
+            <br />differentiate crate series:
+            <br /><span class="tfPrice">Crate #1</span>
+            <br /><span class="tfPrice">Crate #10</span>
+            <br /><span class="tfPrice">Crate #40</span>
+            <br /><span class="tfPrice">Salvaged Crate #50</span>
+        </p>
+        <p>
+            Paints require the images to be hosted locally because Valve displays them by masking RGB colors over the image.  No worries though--the repo comes with all the paint can images.<br />
+            <br /><span class="tfPrice">Pink as Hell</span>
+            <br /><span class="tfPrice">The Color of a Gentlemann's Business Pants</span>
+            <br /><span class="tfPrice">A Mann's Mint</span>
+            <br /><span class="tfPrice">Team Spirit</span>
+        </p>
+        <p>
+            It knows the difference between real vintages, and items with "Vintage" as part of their name. <br />
+            <br /><span class="tfPrice">V. Vintage Merryweather</span>
+            <br /><span class="tfPrice">Vintage Vintage Merryweather</span>
+            <br /><span class="tfPrice">Vintage Merryweather</span>
+            <br /><span class="tfPrice">Vintage Tyrolean</span>
+            <br />
+            <br />Same goes for stranges
+            <br /><span class="tfPrice">Strange Frying Pan</span>
+            <br /><span class="tfPrice">Strange Bacon Grease</span>
+            <br /><span class="tfPrice">Strange Part: Airborne Enemies Killed</span>
+        </p>
+        <p>
+            Still not impressed?  Sheesh.  What if I could also parse unusual items with various effects?<br />
+            <span class="note">There's no standardized way to write effect names, so parsing can be a bit tricky.  <a href="https://github.com/rannmann/Backpack.tf_Tooltips/issues">Open an issue</a> if you come across an item that is displaying incorrectly.</span><br />
+            <br /><span class="tfPrice">Unusual Stout Shako Searing Plasma</span>
+            <br /><span class="tfPrice">Unusual Stout Shako (Burning Flames)</span>
+            <br /><span class="tfPrice">Unusual Brown Bomber (Orbiting Fire)</span>
+            <br /><span class="tfPrice">U. Sober Stuntman (Misty Skull)</span>
+            <br /><span class="tfPrice">Unusual Dead Presidents Tough Guy's Toque</span>
+        </p>
+        <p style="font-weight:normal;">
+            Made with <a href="http://jquery.com/">jQuery</a> and <a href="http://craigsworks.com/projects/qtip2/">qTip2</a>. 
+        </p>
+
+        <footer style="margin-bottom:200px;text-align:right;font-size:11px;">Created by <a href="http://www.ranndesigns.com/">Jake "rannmann" Forrester</a><br /><br /><a href="http://www.gnu.org/licenses/gpl.html"><img src="http://www.gnu.org/graphics/gplv3-88x31.png" alt="GPL v3" style="background-color:white;"></a></footer>
+
+    </div>
+
+    <!-- Javascript -->
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/jquery.qtip.min.js"></script>
+    <script type="text/javascript" src="./js/tftips.js"></script>
+</body>
+</html>
