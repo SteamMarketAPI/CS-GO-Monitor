@@ -11,7 +11,8 @@ Built with [jQuery](http://jquery.com) and [qTip2](http://craigsworks.com/projec
 Data provided by [backpack.tf](http://backpack.tf/api).
 
 Original owner of code: [rannmann@rannmann.com](mailto:rannmann@rannmann.com).
-Original github project: [Github](https://github.com/rannmann/Backpack.tf_Tooltips)
+
+Original github project: [Github](https://github.com/rannmann/Backpack.tf_Tooltips).
 
 
 ##### CHANGELOG
