@@ -18,14 +18,24 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-include_once('../config.php');
+include_once('../config.php'); //include our config file
 
-$time_start = microtime(true);
-$query_count = 0;
+$time_start = microtime(true); //start timer
+$query_count = 0; //have a query count for debugging reasons
 
-$link = mysql_connect($server, $dbuser, $dbpass);
-mysql_select_db($database);
+$link = mysqli_connect($server, $dbuser, $dbpass, $database); //create our mysql connection
 
+if (!$link) { //if error, show and exit
+	echo "Error: Unable to connect to MySQL." . PHP_EOL;
+	echo "Debugging errno: " . mysqli_connect_errno() . PHP_EOL;
+	echo "Debugging error: " . mysqli_connect_error() . PHP_EOL;
+	exit;
+}
+
+echo "Success: A proper connection to MySQL was made!" . PHP_EOL; //otherwise show success
+echo "<br/>Host information: " . mysqli_get_host_info($link) . "<br/>" . PHP_EOL;
+
+//setting up curl, to make contact with the url for the api
 function file_get_data($url) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_HEADER, 0);
@@ -37,87 +47,72 @@ function file_get_data($url) {
     return $data;
 }
 
-$raw = file_get_data('http://backpack.tf/api/IGetPrices/v4/?key=' . $bptf_api_key . '&compress=1&raw=1') or die('Error connecting');
+$raw = file_get_data('http://backpack.tf/api/IGetMarketPrices/v1/?key=' . $bptf_api_key . '&appid=730') or die('Error connecting'); //contact that url for csgo using our api key
 $prices = json_decode($raw,true);
-if ($prices['response']['success'] == 0) {
-    die('Error recieved from backpack.tf: ' . $prices['response']['message']);
+
+if ($prices['response']['success'] == 0) { //if error, show and exit
+    die('<br/>Error recieved from backpack.tf: ' . $prices['response']['message']);
 }
-foreach($prices['response']['items'] as $itemname => $obj) { // Ugly, but completes in about 0.2 seconds.
-  $defindexes = $obj['defindex'];
-  foreach($obj['prices'] as $quality => $tradable) {
-    foreach($tradable as $tradable => $craftable) { 
-      foreach($craftable as $craftable => $priceindex) { // Priceindex = crate series or unusual effect. 0 otherwise.
-        foreach($priceindex as $effect => $stats) {
-          foreach($defindexes as $defindex) {
-            $prepare[] = array(
-              'defindex'    => $defindex,
-              'quality'     => $quality,
-              'effect'      => $effect,
-              'value'       => $stats['value'],
-              'last_change' => $stats['difference'], // Last price change
-              'last_update' => $stats['last_update'],
-              'currency'    => $stats['currency'],
-              'value_raw'   => $stats['value_raw'],
-              'tradable'    => $tradable, // Tradable/Non-Tradable
-              'craftable'   => $craftable // Craftable/Non-Craftable
-            );
-          }
-        }
-      }
-    }
-  }
-}
+
+$prices_clean = $prices['response']['items']; //select the items within the array, thats all we want for now
+
+//Creating fake array just for testing tables.
+
+$fakepricestest = array(
+	'response' => 
+		array('items' => 
+			array(
+			'Weapon1' => 
+				array('last_updated' => 1336678011, 'quantity' => 50, 'value' => 500),
+			'weapon2' => 
+				array('last_updated' => 1336678511, 'quantity' => 75, 'value' => 650)
+			)
+		)
+	);
+	
+$fakepricestest_clean = $fakepricestest['response']['items'];
+
+//print_r ($prices_clean) //testing prices variable
+//print_r ($fakepricestest_clean) //compare with created variable that should match.
+
 /* Create the temporary table */
-$q = "CREATE TABLE IF NOT EXISTS $bp_table_temp (
-  `defindex` SMALLINT(5) NOT NULL,
-  `quality` int(3) NOT NULL,
-  `effect` SMALLINT(4) UNSIGNED NOT NULL,
-  `value` FLOAT NOT NULL,
-  `last_change` FLOAT NOT NULL,
-  `last_update` int(10) unsigned default NULL,
-  `currency` varchar(20) default 'metal',
-  `value_raw` FLOAT NOT NULL,
-  `tradable` ENUM('Non-Tradable','Tradable') NOT NULL,
-  `craftable` ENUM('Craftable','Non-Craftable') NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
-mysql_query($q) or die("Unable to create table: " . mysql_error());
-$query_count++;
-/* Insert backpack.tf data into temporary table */
-$q = "INSERT INTO $bp_table_temp VALUES ";
-foreach($prepare as $v) {
-  //$q .= "('".$v[0]."','".$v[1]."','".$v[2]."','".$v[3]."','".$v[4]."','".$v[5]."'), ";
-  $q .= vsprintf("('%d', '%d', '%d', '%.2f', '%.2f', '%u', '%s', '%.2f', '%s', '%s'), ", $v);
-  $item_count++;
+
+$sql = <<<SQL
+DROP TABLE IF EXISTS weapons;
+CREATE TABLE weapons (
+	id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	weaponname varchar(255),
+	lastupdated INT(11),
+	quantity INT,
+	value INT
+);
+SQL;
+
+if($result = mysqli_multi_query($link, $sql)){
+	echo $result;
+	$link->next_result();
+} else {
+	die('There was an error running the query [' . $link->error . ']');
 }
-mysql_query(substr($q,0,-2)) or die(mysql_error());
+
+echo " Weapon table created.";
+
 $query_count++;
 
-/* Insert row into the info table to show last update + USD value of ref */
-$q = "CREATE TABLE IF NOT EXISTS $infotable (
-  `id` int(10) NOT NULL auto_increment,
-  `lastupdate` int(11) NOT NULL,
-  `usdvalue` double default NULL,
-  PRIMARY KEY  (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
-mysql_query($q) or die(mysql_error());
-$query_count++;
-$q = "INSERT INTO $infotable (lastupdate, usdvalue) VALUES ('".$prices['response']['current_time']."','".$prices['response']['raw_usd_value']."')";
-mysql_query($q) or die(mysql_error());
-$query_count++;
+if(is_array($prices_clean)){
+	foreach($prices_clean as $key => $value){
+		$sql = "INSERT INTO weapons (weaponname, lastupdated, quantity, value) VALUES ('" . $key . "', '" . $value['last_updated'] . "', '" . $value['quantity'] . "', '" . $value['value'] . "');";
+		if (!$result = mysqli_multi_query($link, $sql)){
+			die('There was an error running the query [' . $link->error . ']');
+		}
+		$query_count++;
+	}
+}
 
-/* Drop old table if it exists */
-$q = "DROP TABLE IF EXISTS $bp_table";
-mysql_query($q) or die(mysql_error());
-$query_count++;
+$time_end = microtime(true); //see time at the end
+$time = $time_end - $time_start; //measure time
 
-/* Rename temporary table to new table */
-$q = "RENAME TABLE $bp_table_temp TO $bp_table";
-mysql_query($q) or die(mysql_error());
-$query_count++;
+echo "$query_count queries completed successfully in $time seconds.";
 
-$time_end = microtime(true);
-$time = $time_end - $time_start;
-
-echo "1 download, $item_count prices found, and $query_count queries completed successfully in $time seconds.";
-
+mysqli_close($link);
 ?>
