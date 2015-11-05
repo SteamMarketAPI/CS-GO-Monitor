@@ -72,8 +72,8 @@ $fakepricestest = array(
 	
 $fakepricestest_clean = $fakepricestest['response']['items'];
 
-//print_r ($prices_clean) //testing prices variable
-//print_r ($fakepricestest_clean) //compare with created variable that should match.
+//print_r ($prices_clean); //testing prices variable
+//print_r ($fakepricestest_clean); //compare with created variable that should match.
 
 /* Create the temporary table */
 
@@ -99,6 +99,19 @@ echo " Weapon table created.";
 
 $query_count++;
 
+//fakearray insert
+/*
+if(is_array($fakepricestest_clean)){
+	foreach($fakepricestest_clean as $key => $value){
+		$sql = "INSERT INTO weapons (weaponname, lastupdated, quantity, value) VALUES ('" . $key . "', '" . $value['last_updated'] . "', '" . $value['quantity'] . "', '" . $value['value'] . "');";
+		if (!$result = mysqli_multi_query($link, $sql)){
+			die('There was an error running the query [' . $link->error . ']');
+		}
+		$query_count++;
+	}
+}
+*/
+//currently it only imports around 150 records, so it is getting caught on a variable in the below statement. Probably need to check if it is set first then assume zero.
 if(is_array($prices_clean)){
 	foreach($prices_clean as $key => $value){
 		$sql = "INSERT INTO weapons (weaponname, lastupdated, quantity, value) VALUES ('" . $key . "', '" . $value['last_updated'] . "', '" . $value['quantity'] . "', '" . $value['value'] . "');";
