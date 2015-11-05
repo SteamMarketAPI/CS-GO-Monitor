@@ -1,8 +1,8 @@
 <?php
 /*
  *   Backpack.tf Database Importer
- *   For use with v4 of the Backpack.tf API
- *   Copyright (C) 2012-2014  Jake "rannmann" Forrester
+ *   For use with the Backpack.tf API
+ *   By: Lee Boelsma
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
