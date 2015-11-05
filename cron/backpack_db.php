@@ -47,16 +47,16 @@ function file_get_data($url) {
     return $data;
 }
 
-$raw = file_get_data('http://backpack.tf/api/IGetMarketPrices/v1/?key=' . $bptf_api_key . '&appid=730') or die('Error connecting'); //contact that url for csgo using our api key
+$raw = file_get_data('http://backpack.tf/api/IGetMarketPrices/v1/?key=' . $bptf_api_key . '&appid=730') or die('Error connecting'); //contact that url for csgo market data using our api key
 $prices = json_decode($raw,true);
 
 if ($prices['response']['success'] == 0) { //if error, show and exit
     die('<br/>Error recieved from backpack.tf: ' . $prices['response']['message']);
 }
 
-$prices_clean = $prices['response']['items']; //select the items within the array, thats all we want for now
+$prices_clean = $prices['response']['items']; //select the items within the array, thats all we want for now, makes the code cleaner below.
 
-//Creating fake array just for testing tables.
+//Creating fake array just for testing tables. It should be exactly like the api gives us.
 
 $fakepricestest = array(
 	'response' => 
@@ -76,10 +76,10 @@ $fakepricestest_clean = $fakepricestest['response']['items'];
 //print_r ($fakepricestest_clean); //compare with created variable that should match.
 
 /* Create the temporary table */
-
+//new way to put in sql into a variable. I think it has something to do with mysqli being the substitute instead of mysql.
 $sql = <<<SQL
-DROP TABLE IF EXISTS weapons;
-CREATE TABLE weapons (
+DROP TABLE IF EXISTS weapons_temp;
+CREATE TABLE weapons_temp (
 	id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
 	weaponname varchar(255),
 	lastupdated INT(11),
@@ -89,43 +89,37 @@ CREATE TABLE weapons (
 SQL;
 
 if($result = mysqli_multi_query($link, $sql)){
-	echo $result;
-	$link->next_result();
+	echo $result . " Weapon table created.";
+	$link->next_result(); //next result if we are going to run another sql command after this. Otherwise we will get "code can not be run at this time".
 } else {
 	die('There was an error running the query [' . $link->error . ']');
 }
 
-echo " Weapon table created.";
-
 $query_count++;
 
-//fakearray insert
-/*
-if(is_array($fakepricestest_clean)){
-	foreach($fakepricestest_clean as $key => $value){
-		$sql = "INSERT INTO weapons (weaponname, lastupdated, quantity, value) VALUES ('" . $key . "', '" . $value['last_updated'] . "', '" . $value['quantity'] . "', '" . $value['value'] . "');";
-		if (!$result = mysqli_multi_query($link, $sql)){
-			die('There was an error running the query [' . $link->error . ']');
-		}
-		$query_count++;
-	}
-}
-*/
-//currently it only imports around 150 records, so it is getting caught on a variable in the below statement. Probably need to check if it is set first then assume zero.
+//run through the foreach to insert all weapons into table
 if(is_array($prices_clean)){
-	foreach($prices_clean as $key => $value){
-		$sql = "INSERT INTO weapons (weaponname, lastupdated, quantity, value) VALUES ('" . $key . "', '" . $value['last_updated'] . "', '" . $value['quantity'] . "', '" . $value['value'] . "');";
+	foreach($prices_clean as $key => $value){ //for each key run this insert statement with its values within the key to insert.
+		$sql = "INSERT INTO weapons_temp (weaponname, lastupdated, quantity, value) VALUES 
+		('" . mysqli_real_escape_string($link, $key) . "', '" . mysqli_real_escape_string($link, $value['last_updated']) . "', 
+		'" . mysqli_real_escape_string($link, $value['quantity']) . "', '" . mysqli_real_escape_string($link, $value['value']) . "');"; //make sure we escape our variables, or else the single quotes will get us!
+		//echo $sql; //Used for syntax error troubleshooting.
 		if (!$result = mysqli_multi_query($link, $sql)){
 			die('There was an error running the query [' . $link->error . ']');
 		}
 		$query_count++;
 	}
 }
+
+//the current exchange rate is in usd. We need to get this into cad somehow. We may be able to use https://openexchangerates.org/ to use their api and get exchange rates, and see how close that compares with steam.
+//apparently steam updates their exchange rates every morning with an unknown service. Possibly paypal.
+
+//next would be to format the data in a better way, parse the weapon name and seperate quality, and other values. When we do that, would should make the table name a temp. then rename it to the actual table at the end.
 
 $time_end = microtime(true); //see time at the end
 $time = $time_end - $time_start; //measure time
 
-echo "$query_count queries completed successfully in $time seconds.";
+echo "<br/>$query_count queries completed successfully in $time seconds."; //show how many queries we ran and how long it took us.
 
-mysqli_close($link);
+mysqli_close($link); //Always close our sql connections.
 ?>
